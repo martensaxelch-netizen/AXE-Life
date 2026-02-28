@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AXE Life OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    /* AXElife.OS Brand Colors — extraits du logo */
+    --navy:        #1B3A6B;   /* "AXE" navy profond         */
+    --blue-main:   #2563EB;   /* "life" bleu vif            */
+    --blue-light:  #DBEAFE;   /* fond bleu doux             */
+    --blue-mid:    #93C5FD;   /* bleu intermédiaire         */
+
+    /* Logo rainbow palette */
+    --logo-blue:   #3B82F6;
+    --logo-violet: #8B5CF6;
+    --logo-pink:   #EC4899;
+    --logo-red:    #EF4444;
+    --logo-orange: #F97316;
+    --logo-yellow: #EAB308;
+    --logo-green:  #22C55E;
+    --logo-teal:   #14B8A6;
+
+    /* Mapping des rôles UI */
+    --green-primary: #22C55E;   /* actions positives    */
+    --green-light:   #DCFCE7;
+    --green-dark:    #15803D;
+    --orange-accent: #F97316;   /* alertes / dépenses   */
+    --primary:       var(--navy);
+    --accent:        var(--blue-main);
+
+    --bg:          #F0F4FF;    /* fond légèrement bleuté     */
+    --white:       #FFFFFF;
+    --text:        #0F172A;
+    --text-muted:  #64748B;
+    --border:      #E2E8F0;
+    --shadow:      0 2px 12px rgba(30,58,138,0.08);
+    --shadow-lg:   0 8px 32px rgba(30,58,138,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  h1,h2,h3,h4 { font-family: 'Syne', sans-serif; }
+  .app-header {
+    background: var(--white);
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    box-shadow: var(--shadow);
+  }
+  .app-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      #3B82F6 0%,
+      #8B5CF6 20%,
+      #EC4899 35%,
+      #EF4444 48%,
+      #F97316 60%,
+      #EAB308 74%,
+      #22C55E 88%,
+      #14B8A6 100%
+    );
+  }
+  .app-header .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; cursor:default; }
+  .logo-text-axe  { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; color:var(--navy); letter-spacing:-0.5px; }
+  .logo-text-life { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; color:var(--blue-main); }
+  .logo-text-os   { font-family:'DM Sans',sans-serif; font-weight:600; font-size:1rem; color:var(--text-muted); }
+  .header-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  /* Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 50;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    height: 64px;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    padding: 0;
+  }
+  .nav-item svg { width: 22px; height: 22px; stroke: var(--text-muted); transition: all 0.2s; }
+  .nav-item span { font-size: 0.65rem; color: var(--text-muted); font-weight: 500; transition: all 0.2s; }
+  .nav-item.active svg { stroke: var(--blue-main); }
+  .nav-item.active span { color: var(--blue-main); font-weight: 600; }
+  .nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 28px; height: 3px;
+    background: linear-gradient(90deg, var(--logo-blue), var(--logo-violet));
+    border-radius: 2px 2px 0 0;
+  }
+  .nav-badge {
+    position: absolute;
+    top: 6px; right: calc(50% - 18px);
+    background: var(--orange-accent);
+    color: white;
+    font-size: 0.55rem;
+    font-weight: 700;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Views */
+  .view { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  /* Cards */
+  .card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.4rem; color: var(--text); }
+  .stat-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+  .stat-green .stat-value { color: var(--blue-main); }
+  .stat-orange .stat-value { color: var(--orange-accent); }
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--navy) 0%, var(--blue-main) 100%); color: white; }
+  .btn-primary:hover { background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+  .btn-ghost { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-danger { background: #FEE2E2; color: #DC2626; }
+  .btn-danger:hover { background: #FECACA; }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: 76px; right: 16px;
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue-main) 100%);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(37,99,235,0.45);
+    z-index: 45;
+    transition: all 0.2s;
+    color: white;
+  }
+  .fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(37,99,235,0.6); }
+  .fab svg { width: 24px; height: 24px; }
+  /* Sub-nav tabs */
+  .sub-nav {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .sub-nav::-webkit-scrollbar { display: none; }
+  .sub-tab {
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    background: var(--bg);
+    color: var(--text-muted);
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .sub-tab.active { background: var(--blue-light); color: var(--blue-main); }
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; animation: overlayIn 0.2s ease; }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-close {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  /* Forms */
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue-main); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* List items */
+  .list-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item-content { flex: 1; min-width: 0; }
+  .list-item-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-item-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .badge-green { background: var(--blue-light); color: var(--blue-main); }
+  .badge-orange { background: #FFF7ED; color: var(--orange-accent); }
+  .badge-red { background: #FEE2E2; color: #DC2626; }
+  .badge-gray { background: var(--bg); color: var(--text-muted); }
+  /* Progress bar */
+  .progress-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--navy), var(--blue-main)); border-radius: 4px; transition: width 0.3s ease; }
+  /* Todo checkbox */
+  .todo-check {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .todo-check.checked { background: var(--blue-main); border-color: var(--blue-main); }
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 76px; left: 16px; right: 16px;
+    background: #1F2937;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    z-index: 200;
+    display: none;
+    animation: toastIn 0.25s ease;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .toast.show { display: flex; align-items: center; gap: 10px; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  /* Section view (sub-modules) */
+  .sub-view { display: none; }
+  .sub-view.active { display: block; }
+  /* Chart containers */
+  .chart-wrap { position: relative; height: 180px; }
+  /* Priority dots */
+  .priority-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .priority-high { background: #DC2626; }
+  .priority-normal { background: var(--orange-accent); }
+  .priority-low { background: #6B7280; }
+  /* Score circle */
+  .score-circle {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: conic-gradient(var(--green-primary) 0%, var(--green-light) 0%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 0 0 4px var(--green-light);
+  }
+  .score-inner {
+    width: 60px; height: 60px;
+    background: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  /* Timeline */
+  .timeline-item { position: relative; padding-left: 24px; padding-bottom: 16px; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 6px; top: 8px; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item:last-child::before { display: none; }
+  .timeline-dot {
+    position: absolute;
+    left: 0; top: 4px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--navy), var(--blue-main));
+    border: 2px solid var(--blue-light);
+  }
+  /* Empty state */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 0.875rem; }
+  @media (min-width: 640px) {
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    .view { padding: 20px; max-width: 720px; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="app-header">
+  <div class="logo">
+    <!-- Logo icon SVG — réplique du logo AXElife.OS -->
+    <svg width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3B82F6"/>
+          <stop offset="100%" stop-color="#8B5CF6"/>
+        </linearGradient>
+        <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#EC4899"/>
+          <stop offset="100%" stop-color="#EF4444"/>
+        </linearGradient>
+        <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#F97316"/>
+          <stop offset="100%" stop-color="#EAB308"/>
+        </linearGradient>
+        <linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#22C55E"/>
+          <stop offset="100%" stop-color="#14B8A6"/>
+        </linearGradient>
+        <linearGradient id="gA" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#BFDBFE"/>
+          <stop offset="100%" stop-color="#EFF6FF"/>
+        </linearGradient>
+      </defs>
+      <!-- Ruban haut-gauche (bleu→violet) -->
+      <path d="M50 8 C28 8, 8 28, 8 50 C8 35, 20 18, 38 14 Z" fill="url(#g1)" opacity="0.95"/>
+      <path d="M8 50 C8 30, 22 14, 42 10 C25 16, 12 32, 12 50 Z" fill="url(#g1)" opacity="0.7"/>
+      <!-- Ruban bas-gauche (rose→rouge) -->
+      <path d="M12 58 C14 74, 28 88, 44 92 C30 88, 16 76, 12 60 Z" fill="url(#g2)" opacity="0.95"/>
+      <path d="M10 54 C10 68, 18 82, 32 90 C20 82, 12 68, 12 54 Z" fill="url(#g2)" opacity="0.7"/>
+      <!-- Ruban bas-droit (orange→jaune) -->
+      <path d="M56 92 C72 88, 88 72, 88 54 C86 68, 76 84, 60 90 Z" fill="url(#g3)" opacity="0.95"/>
+      <path d="M62 92 C78 86, 92 70, 92 52 C90 68, 80 86, 62 92 Z" fill="url(#g3)" opacity="0.7"/>
+      <!-- Ruban haut-droit (vert→teal) -->
+      <path d="M88 42 C86 26, 72 12, 56 8 C70 12, 84 28, 88 44 Z" fill="url(#g4)" opacity="0.95"/>
+      <path d="M90 48 C90 32, 80 16, 64 10 C78 16, 90 32, 90 50 Z" fill="url(#g4)" opacity="0.7"/>
+      <!-- Lettre A centrale -->
+      <text x="50" y="62" text-anchor="middle" font-family="Syne, sans-serif" font-weight="800" font-size="34" fill="url(#gA)" stroke="#2563EB" stroke-width="1.5" opacity="0.95">A</text>
+      <!-- Étoile/sparkle center -->
+      <circle cx="50" cy="44" r="3" fill="white" opacity="0.9"/>
+      <line x1="50" y1="39" x2="50" y2="35" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+      <line x1="50" y1="49" x2="50" y2="53" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+      <line x1="45" y1="44" x2="41" y2="44" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+      <line x1="55" y1="44" x2="59" y2="44" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+    </svg>
+    <!-- Wordmark -->
+    <div style="line-height:1">
+      <div><span class="logo-text-axe">AXE</span><span class="logo-text-life">life</span><span class="logo-text-os">.OS</span></div>
+      <div style="font-size:0.52rem;color:var(--text-muted);letter-spacing:0.04em;font-weight:500;margin-top:1px">ORGANISER · SUIVRE · RÉUSSIR</div>
+    </div>
+  </div>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<!-- ===================== HEALTH VIEW ===================== -->
+<div class="view active" id="view-health">
+  <div class="sub-nav">
+    <button class="sub-tab active" data-module="health" data-section="summary">Résumé</button>
+    <button class="sub-tab" data-module="health" data-section="imc">IMC / Poids</button>
+    <button class="sub-tab" data-module="health" data-section="food">Alimentation</button>
+    <button class="sub-tab" data-module="health" data-section="sport">Sport</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="sub-view active" id="health-summary">
+    <div class="stats-grid">
+      <div class="stat-card" style="border-left: 4px solid var(--blue-main)">
+        <div class="stat-label">Score Santé</div>
+        <div class="stat-value" id="h-score" style="color:var(--blue-main)">--</div>
+        <div class="stat-sub">/ 100</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Poids actuel</div>
+        <div class="stat-value" id="h-weight">--</div>
+        <div class="stat-sub" id="h-weight-change">kg</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cal. nettes</div>
+        <div class="stat-value" id="h-cal-net">--</div>
+        <div class="stat-sub">kcal</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Protéines</div>
+        <div class="stat-value" id="h-protein">--</div>
+        <div class="stat-sub">g aujourd'hui</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Évolution poids</div>
+      <div class="chart-wrap"><canvas id="chartWeight"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Calories: consommées vs brûlées</div>
+      <div class="chart-wrap"><canvas id="chartCals"></canvas></div>
+    </div>
+    <!-- Today reminder from calendar -->
+    <div id="health-reminders"></div>
+  </div>
+
+  <!-- IMC -->
+  <div class="sub-view" id="health-imc">
+    <div class="card">
+      <div class="card-title">Profil</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Taille (cm)</label>
+          <input class="form-input" id="h-height" type="number" placeholder="175" min="100" max="250"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Poids (kg)</label>
+          <input class="form-input" id="h-weight-input" type="number" placeholder="70" step="0.1"/>
+        </div>
+      </div>
+      <button class="btn btn-primary w-full" style="width:100%" onclick="HealthModule.saveProfile()">Enregistrer</button>
+    </div>
+    <div class="card" id="imc-card" style="display:none">
+      <div class="card-title">Mon IMC</div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--blue-main)" id="imc-value">--</div>
+          <div id="imc-label" style="font-size:0.85rem;color:var(--text-muted)"></div>
+        </div>
+        <div style="flex:1">
+          <div class="progress-bar">
+            <div class="progress-fill" id="imc-bar" style="width:0%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-muted);margin-top:4px">
+            <span>16</span><span>18.5</span><span>25</span><span>30</span><span>40</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Historique poids</div>
+      <div id="weight-list"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:8px" onclick="UIService.openModal('modal-weight')">+ Saisir nouveau poids</button>
+  </div>
+
+  <!-- Food -->
+  <div class="sub-view" id="health-food">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700">Aujourd'hui</h3>
+      <div>
+        <span id="food-cal-total" style="font-weight:700;color:var(--blue-main)">0</span>
+        <span style="font-size:0.8rem;color:var(--text-muted)"> kcal · </span>
+        <span id="food-protein-total" style="font-weight:700;color:var(--orange-accent)">0</span>
+        <span style="font-size:0.8rem;color:var(--text-muted)"> g prot.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div id="food-list"></div>
+    </div>
+  </div>
+
+  <!-- Sport -->
+  <div class="sub-view" id="health-sport">
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr">
+      <div class="stat-card stat-orange">
+        <div class="stat-label">Cal. brûlées</div>
+        <div class="stat-value" id="sport-cal-today">0</div>
+        <div class="stat-sub">aujourd'hui</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Séances / sem.</div>
+        <div class="stat-value" id="sport-sessions">0</div>
+        <div class="stat-sub">cette semaine</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Activité semaine</div>
+      <div class="chart-wrap"><canvas id="chartSport"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Séances récentes</div>
+      <div id="sport-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FINANCE VIEW ===================== -->
+<div class="view" id="view-finance">
+  <div class="stats-grid">
+    <div class="stat-card stat-green">
+      <div class="stat-label">Solde net</div>
+      <div class="stat-value" id="fin-balance">0€</div>
+      <div class="stat-sub">ce mois</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Revenus</div>
+      <div class="stat-value" id="fin-income">0€</div>
+      <div class="stat-sub">total</div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-label">Dépenses</div>
+      <div class="stat-value" id="fin-expense">0€</div>
+      <div class="stat-sub">total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Projection</div>
+      <div class="stat-value" id="fin-projection">0€</div>
+      <div class="stat-sub">fin de mois</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Répartition dépenses</div>
+    <div class="chart-wrap"><canvas id="chartFinance"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Transactions récentes</div>
+    <div id="finance-list"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn btn-primary btn-sm" onclick="UIService.openModal('modal-income')">+ Revenu</button>
+    <button class="btn btn-danger btn-sm" onclick="UIService.openModal('modal-expense')">− Dépense</button>
+  </div>
+</div>
+
+<!-- ===================== CALENDAR VIEW ===================== -->
+<div class="view" id="view-calendar">
+  <div class="sub-nav">
+    <button class="sub-tab active" data-module="calendar" data-section="today">Aujourd'hui</button>
+    <button class="sub-tab" data-module="calendar" data-section="week">Semaine</button>
+    <button class="sub-tab" data-module="calendar" data-section="all">Tous</button>
+  </div>
+  <div class="sub-view active" id="calendar-today">
+    <div class="card">
+      <div class="card-title" id="cal-today-label">Événements du jour</div>
+      <div id="cal-today-list"></div>
+    </div>
+  </div>
+  <div class="sub-view" id="calendar-week">
+    <div class="card">
+      <div class="card-title">Cette semaine</div>
+      <div id="cal-week-list"></div>
+    </div>
+  </div>
+  <div class="sub-view" id="calendar-all">
+    <div class="card">
+      <div class="card-title">Tous les événements</div>
+      <div id="cal-all-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TODO VIEW ===================== -->
+<div class="view" id="view-todo">
+  <div class="stats-grid" style="grid-template-columns:1fr 1fr">
+    <div class="stat-card stat-green">
+      <div class="stat-label">Tâches complétées</div>
+      <div class="stat-value" id="todo-done-count">0</div>
+      <div class="stat-sub" id="todo-done-sub">/ 0 tâches</div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-label">Charge mentale</div>
+      <div class="stat-value" id="todo-mental-load">0</div>
+      <div class="stat-sub">/ 100 max</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="sub-nav" style="margin-bottom:8px">
+      <button class="sub-tab active" data-module="todo" data-section="active">En cours</button>
+      <button class="sub-tab" data-module="todo" data-section="done">Terminées</button>
+    </div>
+    <div class="sub-view active" id="todo-active"><div id="todo-active-list"></div></div>
+    <div class="sub-view" id="todo-done"><div id="todo-done-list"></div></div>
+  </div>
+</div>
+
+<!-- ===================== PROJECTS VIEW ===================== -->
+<div class="view" id="view-projects">
+  <div id="projects-list"></div>
+</div>
+
+<!-- ===================== BOTTOM NAV ===================== -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-view="health">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span>Santé</span>
+  </button>
+  <button class="nav-item" data-view="finance">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+    <span>Finance</span>
+  </button>
+  <button class="nav-item" data-view="calendar" id="nav-calendar">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Agenda</span>
+  </button>
+  <button class="nav-item" data-view="todo">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    <span>To-Do</span>
+  </button>
+  <button class="nav-item" data-view="projects">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="3" width="6" height="18" rx="1"/><rect x="9" y="8" width="6" height="13" rx="1"/><rect x="16" y="13" width="6" height="8" rx="1"/></svg>
+    <span>Projets</span>
+  </button>
+</nav>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- ===================== MODALS ===================== -->
+<!-- Weight entry -->
+<div class="modal-overlay" id="modal-weight">
+  <div class="modal">
+    <div class="modal-title">Saisir mon poids
+      <button class="modal-close" onclick="UIService.closeModal('modal-weight')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Poids (kg)</label>
+      <input class="form-input" id="new-weight" type="number" step="0.1" placeholder="70.5"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="new-weight-date" type="date"/>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="HealthModule.addWeight()">Enregistrer</button>
+  </div>
+</div>
+
+<!-- Food entry -->
+<div class="modal-overlay" id="modal-food">
+  <div class="modal">
+    <div class="modal-title">Ajouter aliment
+      <button class="modal-close" onclick="UIService.closeModal('modal-food')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nom de l'aliment</label>
+      <input class="form-input" id="food-name" placeholder="Poulet, riz..."/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Calories (kcal)</label>
+        <input class="form-input" id="food-calories" type="number" placeholder="200"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Protéines (g)</label>
+        <input class="form-input" id="food-protein" type="number" placeholder="25"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Repas</label>
+      <select class="form-select" id="food-meal">
+        <option>Petit-déjeuner</option><option>Déjeuner</option><option>Dîner</option><option>Collation</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="HealthModule.addFood()">Ajouter</button>
+  </div>
+</div>
+
+<!-- Sport entry -->
+<div class="modal-overlay" id="modal-sport">
+  <div class="modal">
+    <div class="modal-title">Ajouter séance sport
+      <button class="modal-close" onclick="UIService.closeModal('modal-sport')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type d'activité</label>
+      <select class="form-select" id="sport-type">
+        <option>Course à pied</option><option>Musculation</option><option>Natation</option>
+        <option>Vélo</option><option>HIIT</option><option>Yoga</option><option>Autre</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Durée (min)</label>
+        <input class="form-input" id="sport-duration" type="number" placeholder="45"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cal. brûlées</label>
+        <input class="form-input" id="sport-calories" type="number" placeholder="350"/>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="HealthModule.addSport()">Enregistrer</button>
+  </div>
+</div>
+
+<!-- Income -->
+<div class="modal-overlay" id="modal-income">
+  <div class="modal">
+    <div class="modal-title">Ajouter un revenu
+      <button class="modal-close" onclick="UIService.closeModal('modal-income')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input class="form-input" id="income-desc" placeholder="Salaire, freelance..."/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Montant (€)</label>
+      <input class="form-input" id="income-amount" type="number" placeholder="1500"/>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="FinanceModule.addTransaction('income')">Ajouter</button>
+  </div>
+</div>
+
+<!-- Expense -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <div class="modal-title">Ajouter une dépense
+      <button class="modal-close" onclick="UIService.closeModal('modal-expense')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input class="form-input" id="expense-desc" placeholder="Courses, loyer..."/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Montant (€)</label>
+        <input class="form-input" id="expense-amount" type="number" placeholder="50"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catégorie</label>
+        <select class="form-select" id="expense-cat">
+          <option>Courses</option><option>Restaurant</option><option>Logement</option>
+          <option>Transport</option><option>Loisirs</option><option>Autres</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-danger" style="width:100%" onclick="FinanceModule.addTransaction('expense')">Ajouter</button>
+  </div>
+</div>
+
+<!-- Calendar Event -->
+<div class="modal-overlay" id="modal-event">
+  <div class="modal">
+    <div class="modal-title">Nouvel événement
+      <button class="modal-close" onclick="UIService.closeModal('modal-event')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Titre</label>
+      <input class="form-input" id="event-title" placeholder="Réunion, RDV médecin..."/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input class="form-input" id="event-date" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Heure</label>
+        <input class="form-input" id="event-time" type="time"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Catégorie</label>
+      <select class="form-select" id="event-cat">
+        <option>Santé</option><option>Travail</option><option>Personnel</option><option>Sport</option><option>Autre</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Priorité</label>
+      <select class="form-select" id="event-priority">
+        <option value="normal">Normale</option><option value="high">Haute</option><option value="low">Faible</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Répétition</label>
+      <select class="form-select" id="event-repeat">
+        <option value="none">Aucune</option><option value="daily">Quotidien</option>
+        <option value="weekly">Hebdomadaire</option><option value="monthly">Mensuel</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="CalendarModule.addEvent()">Créer</button>
+  </div>
+</div>
+
+<!-- Todo Modal -->
+<div class="modal-overlay" id="modal-todo">
+  <div class="modal">
+    <div class="modal-title">Nouvelle tâche
+      <button class="modal-close" onclick="UIService.closeModal('modal-todo')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tâche</label>
+      <input class="form-input" id="todo-title" placeholder="Que dois-tu faire ?"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Priorité</label>
+      <select class="form-select" id="todo-priority">
+        <option value="normal">Normale</option>
+        <option value="high">Haute 🔴</option>
+        <option value="low">Faible ⚪</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="TodoModule.addTask()">Ajouter</button>
+  </div>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="modal-project">
+  <div class="modal">
+    <div class="modal-title">Nouveau projet
+      <button class="modal-close" onclick="UIService.closeModal('modal-project')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nom du projet</label>
+      <input class="form-input" id="proj-name" placeholder="Mon grand projet"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="proj-desc" rows="2" placeholder="Objectif, contexte..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Début</label>
+        <input class="form-input" id="proj-start" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fin prévue</label>
+        <input class="form-input" id="proj-end" type="date"/>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="ProjectModule.addProject()">Créer le projet</button>
+  </div>
+</div>
+
+<!-- Milestone Modal -->
+<div class="modal-overlay" id="modal-milestone">
+  <div class="modal">
+    <div class="modal-title">Nouvelle étape
+      <button class="modal-close" onclick="UIService.closeModal('modal-milestone')">✕</button>
+    </div>
+    <input type="hidden" id="ms-project-id"/>
+    <div class="form-group">
+      <label class="form-label">Titre de l'étape</label>
+      <input class="form-input" id="ms-title" placeholder="Livraison v1, Lancement..."/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date limite</label>
+      <input class="form-input" id="ms-deadline" type="date"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="ms-create-event"/> Créer un rappel dans l'Agenda
+      </label>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="ProjectModule.addMilestone()">Ajouter</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✓</span>
+  <span id="toast-text"></span>
+</div>
+
+<script>
+// ============================================================
+//  STORAGE SERVICE
+// ============================================================
+const StorageService = {
+  get(key) {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : null;
+    } catch { return null; }
+  },
+  set(key, data) {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) { console.error('Storage error', e); }
+  },
+  initDefaults() {
+    if (!this.get('healthData')) this.set('healthData', { userProfile: { height: null }, weightEntries: [], foodEntries: [], sportEntries: [] });
+    if (!this.get('financeData')) this.set('financeData', { transactions: [], categories: ['Courses','Restaurant','Logement','Transport','Loisirs','Autres'] });
+    if (!this.get('calendarData')) this.set('calendarData', { events: [] });
+    if (!this.get('todoData')) this.set('todoData', { tasks: [] });
+    if (!this.get('projectData')) this.set('projectData', { projects: [] });
+  }
+};
+
+// ============================================================
+//  UTILS
+// ============================================================
+const Utils = {
+  uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); },
+  todayISO() { return new Date().toISOString().split('T')[0]; },
+  formatDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+  },
+  formatMoney(n) { return (n >= 0 ? '+' : '') + n.toFixed(0) + '€'; },
+  getDayOfWeek(iso) { return new Date(iso + 'T00:00:00').getDay(); },
+  startOfWeek() {
+    const d = new Date();
+    d.setDate(d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1));
+    return d.toISOString().split('T')[0];
+  },
+  endOfWeek() {
+    const s = new Date(this.startOfWeek() + 'T00:00:00');
+    s.setDate(s.getDate() + 6);
+    return s.toISOString().split('T')[0];
+  },
+  daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+};
+
+// ============================================================
+//  CHART SERVICE
+// ============================================================
+const ChartService = {
+  _charts: {},
+  destroy(id) { if (this._charts[id]) { this._charts[id].destroy(); delete this._charts[id]; } },
+  create(id, config) {
+    this.destroy(id);
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    this._charts[id] = new Chart(ctx, config);
+    return this._charts[id];
+  }
+};
+
+// ============================================================
+//  UI SERVICE
+// ============================================================
+const UIService = {
+  openModal(id) {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('open'); el.addEventListener('click', this._overlayClose.bind(this)); }
+  },
+  closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  },
+  _overlayClose(e) { if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open'); },
+  toast(msg, ok = true) {
+    const t = document.getElementById('toast');
+    const icon = document.getElementById('toast-icon');
+    const text = document.getElementById('toast-text');
+    icon.textContent = ok ? '✓' : '⚠';
+    text.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  },
+  setSubSection(module, section) {
+    const views = document.querySelectorAll(`#view-${module} .sub-view`);
+    views.forEach(v => v.classList.remove('active'));
+    const target = document.getElementById(`${module}-${section}`);
+    if (target) target.classList.add('active');
+    // update tabs
+    document.querySelectorAll(`[data-module="${module}"]`).forEach(t => {
+      t.classList.toggle('active', t.dataset.section === section);
+    });
+  },
+  emptyState(msg) {
+    return `<div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <p>${msg}</p></div>`;
+  }
+};
+
+// ============================================================
+//  HEALTH MODULE
+// ============================================================
+const HealthModule = {
+  _data: null,
+  init() { this._data = StorageService.get('healthData'); this.render(); },
+  loadData() { this._data = StorageService.get('healthData'); },
+  saveData() { StorageService.set('healthData', this._data); },
+  render() {
+    this.renderSummary();
+    this.renderIMC();
+    this.renderFood();
+    this.renderSport();
+  },
+  /* Profile / IMC */
+  saveProfile() {
+    const h = parseFloat(document.getElementById('h-height').value);
+    const w = parseFloat(document.getElementById('h-weight-input').value);
+    if (!h || !w) return UIService.toast('Remplis taille et poids', false);
+    this._data.userProfile.height = h;
+    this._data.weightEntries.unshift({ id: Utils.uid(), date: Utils.todayISO(), weight: w });
+    this.saveData(); this.render(); UIService.toast('Profil enregistré ✓');
+  },
+  addWeight() {
+    const w = parseFloat(document.getElementById('new-weight').value);
+    const date = document.getElementById('new-weight-date').value || Utils.todayISO();
+    if (!w) return UIService.toast('Entrez un poids valide', false);
+    this._data.weightEntries.unshift({ id: Utils.uid(), date, weight: w });
+    this.saveData(); this.render(); UIService.closeModal('modal-weight'); UIService.toast('Poids enregistré');
+    document.getElementById('new-weight').value = '';
+  },
+  addFood() {
+    const name = document.getElementById('food-name').value.trim();
+    const cal = parseInt(document.getElementById('food-calories').value) || 0;
+    const prot = parseInt(document.getElementById('food-protein').value) || 0;
+    const meal = document.getElementById('food-meal').value;
+    if (!name) return UIService.toast('Nom requis', false);
+    this._data.foodEntries.unshift({ id: Utils.uid(), date: Utils.todayISO(), name, calories: cal, protein: prot, meal });
+    this.saveData(); this.renderSummary(); this.renderFood();
+    UIService.closeModal('modal-food'); UIService.toast('Aliment ajouté');
+    ['food-name','food-calories','food-protein'].forEach(i => document.getElementById(i).value = '');
+  },
+  addSport() {
+    const type = document.getElementById('sport-type').value;
+    const dur = parseInt(document.getElementById('sport-duration').value) || 0;
+    const cal = parseInt(document.getElementById('sport-calories').value) || 0;
+    if (!dur) return UIService.toast('Durée requise', false);
+    this._data.sportEntries.unshift({ id: Utils.uid(), date: Utils.todayISO(), type, duration: dur, calories: cal });
+    this.saveData(); this.renderSummary(); this.renderSport();
+    UIService.closeModal('modal-sport'); UIService.toast('Séance enregistrée');
+    ['sport-duration','sport-calories'].forEach(i => document.getElementById(i).value = '');
+  },
+  _calcIMC(weight, heightCm) {
+    if (!weight || !heightCm) return null;
+    return +(weight / ((heightCm / 100) ** 2)).toFixed(1);
+  },
+  _todayFood() { return this._data.foodEntries.filter(f => f.date === Utils.todayISO()); },
+  _todaySport() { return this._data.sportEntries.filter(s => s.date === Utils.todayISO()); },
+  _calScore() {
+    let score = 50;
+    const lastW = this._data.weightEntries[0];
+    if (lastW) score += 10;
+    const food = this._todayFood();
+    const sport = this._todaySport();
+    const cal = food.reduce((a,f) => a + f.calories, 0);
+    const burn = sport.reduce((a,s) => a + s.calories, 0);
+    if (food.length > 0) score += 15;
+    if (sport.length > 0) score += 15;
+    if (cal > 0 && cal < 2500) score += 10;
+    return Math.min(100, score);
+  },
+  renderSummary() {
+    this.loadData();
+    const today = Utils.todayISO();
+    const food = this._todayFood();
+    const sport = this._todaySport();
+    const calEaten = food.reduce((a,f) => a + f.calories, 0);
+    const calBurned = sport.reduce((a,s) => a + s.calories, 0);
+    const calNet = calEaten - calBurned;
+    const proteins = food.reduce((a,f) => a + f.protein, 0);
+    const lastW = this._data.weightEntries[0];
+    const prevW = this._data.weightEntries[1];
+    let wChange = '';
+    if (lastW && prevW) {
+      const diff = (lastW.weight - prevW.weight).toFixed(1);
+      wChange = (diff >= 0 ? '+' : '') + diff + 'kg';
+    }
+    document.getElementById('h-score').textContent = this._calScore();
+    document.getElementById('h-weight').textContent = lastW ? lastW.weight + 'kg' : '--';
+    document.getElementById('h-weight-change').textContent = wChange || 'kg';
+    document.getElementById('h-cal-net').textContent = calNet;
+    document.getElementById('h-protein').textContent = proteins;
+
+    // Weight chart
+    const wEntries = [...this._data.weightEntries].reverse().slice(-10);
+    ChartService.create('chartWeight', {
+      type: 'line',
+      data: {
+        labels: wEntries.map(e => e.date.slice(5)),
+        datasets: [{ label: 'Poids', data: wEntries.map(e => e.weight), borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.08)', tension: 0.4, pointRadius: 4, pointBackgroundColor: '#2563EB', fill: true }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false, grid: { color: '#F3F4F6' } }, x: { grid: { display: false } } } }
+    });
+
+    // Cal chart (last 7 days)
+    const days = [];
+    const eaten = [], burned = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const iso = d.toISOString().split('T')[0];
+      days.push(iso.slice(5));
+      eaten.push(this._data.foodEntries.filter(f => f.date === iso).reduce((a,f) => a + f.calories, 0));
+      burned.push(this._data.sportEntries.filter(s => s.date === iso).reduce((a,s) => a + s.calories, 0));
+    }
+    ChartService.create('chartCals', {
+      type: 'bar',
+      data: {
+        labels: days,
+        datasets: [
+          { label: 'Consommées', data: eaten, backgroundColor: 'rgba(37,99,235,0.8)', borderRadius: 6 },
+          { label: 'Brûlées', data: burned, backgroundColor: 'rgba(249,115,22,0.75)', borderRadius: 6 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#F3F4F6' } } } }
+    });
+
+    // Reminders from calendar
+    this.renderReminders();
+  },
+  renderReminders() {
+    const calData = StorageService.get('calendarData');
+    const today = Utils.todayISO();
+    const todayEvents = (calData?.events || []).filter(e => {
+      if (e.completed) return false;
+      if (e.date === today) return true;
+      if (e.repeatType === 'daily') return e.date <= today;
+      return false;
+    });
+    const el = document.getElementById('health-reminders');
+    if (todayEvents.filter(e => e.category === 'Santé').length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="card"><div class="card-title">Rappels santé aujourd'hui</div>
+      ${todayEvents.filter(e => e.category === 'Santé').map(e => `<div class="list-item"><span class="badge badge-green">${e.time || ''}</span><div class="list-item-content"><div class="list-item-title">${e.title}</div></div></div>`).join('')}
+    </div>`;
+  },
+  renderIMC() {
+    this.loadData();
+    const { height } = this._data.userProfile;
+    const lastW = this._data.weightEntries[0];
+    if (height) document.getElementById('h-height').value = height;
+    if (lastW) document.getElementById('h-weight-input').value = lastW.weight;
+    const imcCard = document.getElementById('imc-card');
+    if (height && lastW) {
+      const imc = this._calcIMC(lastW.weight, height);
+      document.getElementById('imc-value').textContent = imc;
+      let label = '', color = '#2563EB';
+      if (imc < 18.5) { label = 'Insuffisance pondérale'; color = '#3B82F6'; }
+      else if (imc < 25) { label = 'Poids normal ✓'; color = '#2563EB'; }
+      else if (imc < 30) { label = 'Surpoids'; color = '#F97316'; }
+      else { label = 'Obésité'; color = '#DC2626'; }
+      document.getElementById('imc-label').textContent = label;
+      document.getElementById('imc-value').style.color = color;
+      const pct = Math.min(100, Math.max(0, ((imc - 16) / (40 - 16)) * 100));
+      document.getElementById('imc-bar').style.width = pct + '%';
+      document.getElementById('imc-bar').style.background = color || 'var(--blue-main)';
+      imcCard.style.display = 'block';
+    }
+    const wList = document.getElementById('weight-list');
+    const entries = this._data.weightEntries.slice(0, 8);
+    if (!entries.length) { wList.innerHTML = UIService.emptyState('Aucune donnée de poids'); return; }
+    wList.innerHTML = entries.map(e => `
+      <div class="list-item">
+        <div class="list-item-content">
+          <div class="list-item-title">${e.weight} kg</div>
+          <div class="list-item-sub">${Utils.formatDate(e.date)}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="HealthModule.deleteWeight('${e.id}')">✕</button>
+      </div>`).join('');
+  },
+  deleteWeight(id) {
+    this._data.weightEntries = this._data.weightEntries.filter(e => e.id !== id);
+    this.saveData(); this.render();
+  },
+  renderFood() {
+    this.loadData();
+    const today = Utils.todayISO();
+    const todayFood = this._data.foodEntries.filter(f => f.date === today);
+    const totalCal = todayFood.reduce((a,f) => a + f.calories, 0);
+    const totalProt = todayFood.reduce((a,f) => a + f.protein, 0);
+    document.getElementById('food-cal-total').textContent = totalCal;
+    document.getElementById('food-protein-total').textContent = totalProt;
+    const el = document.getElementById('food-list');
+    if (!todayFood.length) { el.innerHTML = UIService.emptyState('Aucun aliment enregistré aujourd\'hui'); return; }
+    el.innerHTML = todayFood.map(f => `
+      <div class="list-item">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--blue-main);flex-shrink:0"></div>
+        <div class="list-item-content">
+          <div class="list-item-title">${f.name}</div>
+          <div class="list-item-sub">${f.meal} · ${f.calories} kcal · ${f.protein}g prot.</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="HealthModule.deleteFood('${f.id}')">✕</button>
+      </div>`).join('');
+  },
+  deleteFood(id) {
+    this._data.foodEntries = this._data.foodEntries.filter(f => f.id !== id);
+    this.saveData(); this.renderSummary(); this.renderFood();
+  },
+  renderSport() {
+    this.loadData();
+    const today = Utils.todayISO();
+    const sw = Utils.startOfWeek(); const ew = Utils.endOfWeek();
+    const todaySport = this._data.sportEntries.filter(s => s.date === today);
+    const weekSport = this._data.sportEntries.filter(s => s.date >= sw && s.date <= ew);
+    const todayCal = todaySport.reduce((a,s) => a + s.calories, 0);
+    document.getElementById('sport-cal-today').textContent = todayCal;
+    document.getElementById('sport-sessions').textContent = weekSport.length;
+
+    // Sport week chart
+    const days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+    const weekCals = Array(7).fill(0);
+    weekSport.forEach(s => {
+      const d = new Date(s.date + 'T00:00:00');
+      const idx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+      weekCals[idx] += s.calories;
+    });
+    ChartService.create('chartSport', {
+      type: 'bar',
+      data: { labels: days, datasets: [{ label: 'Cal. brûlées', data: weekCals, backgroundColor: 'rgba(139,92,246,0.8)', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#F3F4F6' } } } }
+    });
+
+    const el = document.getElementById('sport-list');
+    const entries = this._data.sportEntries.slice(0, 5);
+    if (!entries.length) { el.innerHTML = UIService.emptyState('Aucune séance enregistrée'); return; }
+    el.innerHTML = entries.map(s => `
+      <div class="list-item">
+        <span style="font-size:1.4rem">${s.type === 'Course à pied' ? '🏃' : s.type === 'Musculation' ? '💪' : s.type === 'Natation' ? '🏊' : s.type === 'Vélo' ? '🚴' : s.type === 'Yoga' ? '🧘' : '⚡'}</span>
+        <div class="list-item-content">
+          <div class="list-item-title">${s.type}</div>
+          <div class="list-item-sub">${Utils.formatDate(s.date)} · ${s.duration} min · ${s.calories} kcal</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="HealthModule.deleteSport('${s.id}')">✕</button>
+      </div>`).join('');
+  },
+  deleteSport(id) {
+    this._data.sportEntries = this._data.sportEntries.filter(s => s.id !== id);
+    this.saveData(); this.renderSummary(); this.renderSport();
+  },
+  bindEvents() {}
+};
+
+// ============================================================
+//  FINANCE MODULE
+// ============================================================
+const FinanceModule = {
+  _data: null,
+  init() { this._data = StorageService.get('financeData'); this.render(); },
+  loadData() { this._data = StorageService.get('financeData'); },
+  saveData() { StorageService.set('financeData', this._data); },
+  render() {
+    this.loadData();
+    const now = new Date();
+    const month = now.getMonth(); const year = now.getFullYear();
+    const monthly = this._data.transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === month && d.getFullYear() === year;
+    });
+    const totalIncome = monthly.filter(t => t.type === 'income').reduce((a,t) => a + t.amount, 0);
+    const totalExpense = monthly.filter(t => t.type === 'expense').reduce((a,t) => a + t.amount, 0);
+    const balance = totalIncome - totalExpense;
+    // Projection
+    const today = now.getDate();
+    const daysInMonth = Utils.daysInMonth(year, month);
+    const dailyRate = today > 0 ? balance / today : 0;
+    const projection = Math.round(dailyRate * daysInMonth);
+
+    document.getElementById('fin-balance').textContent = balance.toFixed(0) + '€';
+    document.getElementById('fin-balance').style.color = balance >= 0 ? 'var(--blue-main)' : '#EF4444';
+    document.getElementById('fin-income').textContent = totalIncome.toFixed(0) + '€';
+    document.getElementById('fin-expense').textContent = totalExpense.toFixed(0) + '€';
+    document.getElementById('fin-projection').textContent = projection + '€';
+
+    // Category chart
+    const catTotals = {};
+    this._data.categories.forEach(c => catTotals[c] = 0);
+    monthly.filter(t => t.type === 'expense').forEach(t => {
+      if (catTotals[t.category] !== undefined) catTotals[t.category] += t.amount;
+      else catTotals['Autres'] += t.amount;
+    });
+    const colors = ['#2563EB','#F97316','#3B82F6','#A855F7','#EC4899','#6B7280'];
+    const nonZero = Object.entries(catTotals).filter(([,v]) => v > 0);
+    ChartService.create('chartFinance', {
+      type: 'doughnut',
+      data: {
+        labels: nonZero.map(([k]) => k),
+        datasets: [{ data: nonZero.map(([,v]) => v), backgroundColor: colors, borderWidth: 0 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+    });
+
+    // Transactions list
+    const el = document.getElementById('finance-list');
+    const recent = this._data.transactions.slice(0, 10);
+    if (!recent.length) { el.innerHTML = UIService.emptyState('Aucune transaction'); return; }
+    el.innerHTML = recent.map(t => `
+      <div class="list-item">
+        <span style="font-size:1.2rem">${t.type === 'income' ? '💰' : '💸'}</span>
+        <div class="list-item-content">
+          <div class="list-item-title">${t.description}</div>
+          <div class="list-item-sub">${Utils.formatDate(t.date)}${t.category ? ' · ' + t.category : ''}</div>
+        </div>
+        <div style="font-weight:700;color:${t.type === 'income' ? 'var(--blue-main)' : '#EF4444'}">${t.type === 'income' ? '+' : '-'}${t.amount}€</div>
+        <button class="btn btn-danger btn-sm" onclick="FinanceModule.deleteTransaction('${t.id}')">✕</button>
+      </div>`).join('');
+  },
+  addTransaction(type) {
+    if (type === 'income') {
+      const desc = document.getElementById('income-desc').value.trim();
+      const amount = parseFloat(document.getElementById('income-amount').value);
+      if (!desc || !amount) return UIService.toast('Champs requis', false);
+      this._data.transactions.unshift({ id: Utils.uid(), type: 'income', description: desc, amount, date: Utils.todayISO() });
+      UIService.closeModal('modal-income');
+      document.getElementById('income-desc').value = '';
+      document.getElementById('income-amount').value = '';
+    } else {
+      const desc = document.getElementById('expense-desc').value.trim();
+      const amount = parseFloat(document.getElementById('expense-amount').value);
+      const category = document.getElementById('expense-cat').value;
+      if (!desc || !amount) return UIService.toast('Champs requis', false);
+      this._data.transactions.unshift({ id: Utils.uid(), type: 'expense', description: desc, amount, category, date: Utils.todayISO() });
+      UIService.closeModal('modal-expense');
+      document.getElementById('expense-desc').value = '';
+      document.getElementById('expense-amount').value = '';
+    }
+    this.saveData(); this.render(); UIService.toast('Transaction ajoutée');
+  },
+  deleteTransaction(id) {
+    this._data.transactions = this._data.transactions.filter(t => t.id !== id);
+    this.saveData(); this.render();
+  },
+  bindEvents() {}
+};
+
+// ============================================================
+//  CALENDAR MODULE
+// ============================================================
+const CalendarModule = {
+  _data: null,
+  init() { this._data = StorageService.get('calendarData'); this.render(); this._requestNotifPermission(); },
+  loadData() { this._data = StorageService.get('calendarData'); },
+  saveData() { StorageService.set('calendarData', this._data); },
+  render() {
+    this.loadData();
+    this.renderToday(); this.renderWeek(); this.renderAll();
+    this._updateBadge();
+  },
+  _requestNotifPermission() {
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  },
+  _notify(title, body) {
+    if ('Notification' in window && Notification.permission === 'granted') new Notification(title, { body, icon: '' });
+  },
+  _isOccurring(event, date) {
+    if (event.date === date) return true;
+    if (event.date > date) return false;
+    if (event.repeatType === 'daily') return true;
+    if (event.repeatType === 'weekly') {
+      const orig = new Date(event.date + 'T00:00:00');
+      const curr = new Date(date + 'T00:00:00');
+      return orig.getDay() === curr.getDay();
+    }
+    if (event.repeatType === 'monthly') {
+      return event.date.slice(8) === date.slice(8);
+    }
+    return false;
+  },
+  _eventsForDate(date) {
+    return this._data.events.filter(e => this._isOccurring(e, date)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  },
+  _updateBadge() {
+    const today = Utils.todayISO();
+    const pending = this._data.events.filter(e => !e.completed && this._isOccurring(e, today)).length;
+    const badge = document.querySelector('#nav-calendar .nav-badge');
+    if (pending > 0) {
+      if (!badge) {
+        const b = document.createElement('div');
+        b.className = 'nav-badge';
+        b.textContent = pending;
+        document.getElementById('nav-calendar').appendChild(b);
+      } else { badge.textContent = pending; }
+    } else if (badge) badge.remove();
+  },
+  renderToday() {
+    const today = Utils.todayISO();
+    const events = this._eventsForDate(today);
+    document.getElementById('cal-today-label').textContent = `Aujourd'hui — ${Utils.formatDate(today)}`;
+    const el = document.getElementById('cal-today-list');
+    if (!events.length) { el.innerHTML = UIService.emptyState('Journée libre 🎉'); return; }
+    el.innerHTML = this._renderEvents(events);
+  },
+  renderWeek() {
+    const sw = Utils.startOfWeek(); const ew = Utils.endOfWeek();
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sw + 'T00:00:00'); d.setDate(d.getDate() + i);
+      days.push(d.toISOString().split('T')[0]);
+    }
+    let html = '';
+    days.forEach(date => {
+      const events = this._eventsForDate(date);
+      if (!events.length) return;
+      html += `<div style="margin-bottom:12px"><div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">${Utils.formatDate(date)}</div>${this._renderEvents(events)}</div>`;
+    });
+    document.getElementById('cal-week-list').innerHTML = html || UIService.emptyState('Semaine libre');
+  },
+  renderAll() {
+    const events = [...this._data.events].sort((a,b) => a.date.localeCompare(b.date));
+    document.getElementById('cal-all-list').innerHTML = events.length ? this._renderEvents(events) : UIService.emptyState('Aucun événement');
+  },
+  _renderEvents(events) {
+    return events.map(e => {
+      const priorityColors = { high: 'badge-red', normal: 'badge-green', low: 'badge-gray' };
+      return `<div class="list-item">
+        <div class="list-item-content">
+          <div class="list-item-title" style="${e.completed ? 'text-decoration:line-through;opacity:0.5' : ''}">${e.title}</div>
+          <div class="list-item-sub">${e.time ? e.time + ' · ' : ''}${e.category} ${e.repeatType !== 'none' ? '🔁' : ''}</div>
+        </div>
+        <span class="badge ${priorityColors[e.priority] || 'badge-gray'}">${e.priority}</span>
+        <button onclick="CalendarModule.toggleEvent('${e.id}')" class="btn btn-ghost btn-sm" style="padding:4px 8px">${e.completed ? '↩' : '✓'}</button>
+        <button onclick="CalendarModule.deleteEvent('${e.id}')" class="btn btn-danger btn-sm">✕</button>
+      </div>`;
+    }).join('');
+  },
+  addEvent() {
+    const title = document.getElementById('event-title').value.trim();
+    const date = document.getElementById('event-date').value;
+    if (!title || !date) return UIService.toast('Titre et date requis', false);
+    const event = {
+      id: Utils.uid(), title, date,
+      time: document.getElementById('event-time').value,
+      category: document.getElementById('event-cat').value,
+      priority: document.getElementById('event-priority').value,
+      repeatType: document.getElementById('event-repeat').value,
+      completed: false
+    };
+    this._data.events.unshift(event);
+    this.saveData(); this.render();
+    UIService.closeModal('modal-event'); UIService.toast('Événement créé');
+    document.getElementById('event-title').value = '';
+    this._notify('AXE Life OS', `Rappel: ${event.title}`);
+  },
+  toggleEvent(id) {
+    const e = this._data.events.find(e => e.id === id);
+    if (e) { e.completed = !e.completed; this.saveData(); this.render(); }
+  },
+  deleteEvent(id) {
+    this._data.events = this._data.events.filter(e => e.id !== id);
+    this.saveData(); this.render();
+  },
+  addEventFromMilestone(title, date) {
+    this._data.events.push({ id: Utils.uid(), title: '📌 ' + title, date, time: '', category: 'Travail', priority: 'high', repeatType: 'none', completed: false });
+    this.saveData(); this._updateBadge();
+    UIService.toast('Rappel agenda créé');
+  },
+  bindEvents() {}
+};
+
+// ============================================================
+//  TODO MODULE
+// ============================================================
+const TodoModule = {
+  _data: null,
+  init() { this._data = StorageService.get('todoData'); this.render(); },
+  loadData() { this._data = StorageService.get('todoData'); },
+  saveData() { StorageService.set('todoData', this._data); },
+  render() {
+    this.loadData();
+    const done = this._data.tasks.filter(t => t.completed);
+    const active = this._data.tasks.filter(t => !t.completed);
+    const total = this._data.tasks.length;
+    document.getElementById('todo-done-count').textContent = done.length;
+    document.getElementById('todo-done-sub').textContent = '/ ' + total + ' tâches';
+    // Mental load: high=15, normal=8, low=3
+    const load = active.reduce((a,t) => a + (t.priority === 'high' ? 15 : t.priority === 'low' ? 3 : 8), 0);
+    document.getElementById('todo-mental-load').textContent = Math.min(100, load);
+    const priorityOrder = { high: 0, normal: 1, low: 2 };
+    const sortedActive = [...active].sort((a,b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+    document.getElementById('todo-active-list').innerHTML = sortedActive.length ? this._renderTasks(sortedActive) : UIService.emptyState('Aucune tâche en cours 🎉');
+    document.getElementById('todo-done-list').innerHTML = done.length ? this._renderTasks(done) : UIService.emptyState('Aucune tâche terminée');
+  },
+  _renderTasks(tasks) {
+    const priorityColors = { high: 'priority-high', normal: 'priority-normal', low: '' };
+    return tasks.map(t => `
+      <div class="list-item">
+        <div class="todo-check${t.completed ? ' checked' : ''}" onclick="TodoModule.toggleTask('${t.id}')">
+          ${t.completed ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+        </div>
+        <div class="list-item-content">
+          <div class="list-item-title" style="${t.completed ? 'text-decoration:line-through;opacity:0.5' : ''}">${t.title}</div>
+          <div class="list-item-sub">Priorité: ${t.priority}</div>
+        </div>
+        <div class="priority-dot ${priorityColors[t.priority]}"></div>
+        <button onclick="TodoModule.deleteTask('${t.id}')" class="btn btn-danger btn-sm">✕</button>
+      </div>`).join('');
+  },
+  addTask() {
+    const title = document.getElementById('todo-title').value.trim();
+    const priority = document.getElementById('todo-priority').value;
+    if (!title) return UIService.toast('Titre requis', false);
+    this._data.tasks.unshift({ id: Utils.uid(), title, priority, completed: false, createdAt: Utils.todayISO() });
+    this.saveData(); this.render();
+    UIService.closeModal('modal-todo'); UIService.toast('Tâche ajoutée');
+    document.getElementById('todo-title').value = '';
+  },
+  toggleTask(id) {
+    const t = this._data.tasks.find(t => t.id === id);
+    if (t) { t.completed = !t.completed; this.saveData(); this.render(); }
+  },
+  deleteTask(id) {
+    this._data.tasks = this._data.tasks.filter(t => t.id !== id);
+    this.saveData(); this.render();
+  },
+  bindEvents() {}
+};
+
+// ============================================================
+//  PROJECT MODULE
+// ============================================================
+const ProjectModule = {
+  _data: null,
+  init() { this._data = StorageService.get('projectData'); this.render(); },
+  loadData() { this._data = StorageService.get('projectData'); },
+  saveData() { StorageService.set('projectData', this._data); },
+  render() {
+    this.loadData();
+    const el = document.getElementById('projects-list');
+    if (!this._data.projects.length) { el.innerHTML = UIService.emptyState('Aucun projet. Créez votre premier projet!'); return; }
+    const sorted = [...this._data.projects].sort((a,b) => (a.startDate || '').localeCompare(b.startDate || ''));
+    el.innerHTML = sorted.map(p => this._renderProject(p)).join('');
+  },
+  _renderProject(p) {
+    const done = p.milestones.filter(m => m.completed).length;
+    const total = p.milestones.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const statusColors = { active: 'badge-green', paused: 'badge-orange', completed: 'badge-gray', planned: 'badge-gray' };
+    const statusLabels = { active: 'En cours', paused: 'Pause', completed: 'Terminé', planned: 'Planifié' };
+    const msHtml = p.milestones.length ? `<div style="margin-top:12px">
+      <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Étapes</div>
+      ${p.milestones.map(m => `
+        <div class="timeline-item">
+          <div class="timeline-dot" style="${m.completed ? '' : 'background:var(--bg);border-color:var(--blue-main)'}"></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:0.85rem;font-weight:${m.completed ? '400' : '600'};${m.completed ? 'text-decoration:line-through;opacity:0.5' : ''}">${m.title}</span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">${Utils.formatDate(m.deadline)}</span>
+            <button onclick="ProjectModule.toggleMilestone('${p.id}','${m.id}')" class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:0.7rem">${m.completed ? '↩' : '✓'}</button>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
+    return `<div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:4px">${p.name}</div>
+          ${p.description ? `<div style="font-size:0.8rem;color:var(--text-muted)">${p.description}</div>` : ''}
+        </div>
+        <span class="badge ${statusColors[p.status]}">${statusLabels[p.status]}</span>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">
+        ${p.startDate ? Utils.formatDate(p.startDate) : ''} ${p.endDate ? '→ ' + Utils.formatDate(p.endDate) : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <span style="font-size:0.75rem;font-weight:700;color:var(--blue-main)">${pct}%</span>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:10px">${done}/${total} étapes</div>
+      ${msHtml}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button onclick="ProjectModule.openMilestoneModal('${p.id}')" class="btn btn-ghost btn-sm">+ Étape</button>
+        <button onclick="ProjectModule.cycleStatus('${p.id}')" class="btn btn-ghost btn-sm">Statut</button>
+        <button onclick="ProjectModule.deleteProject('${p.id}')" class="btn btn-danger btn-sm">Supprimer</button>
+      </div>
+    </div>`;
+  },
+  addProject() {
+    const name = document.getElementById('proj-name').value.trim();
+    if (!name) return UIService.toast('Nom requis', false);
+    const project = {
+      id: Utils.uid(), name,
+      description: document.getElementById('proj-desc').value.trim(),
+      startDate: document.getElementById('proj-start').value,
+      endDate: document.getElementById('proj-end').value,
+      status: 'planned',
+      milestones: []
+    };
+    this._data.projects.unshift(project);
+    this.saveData(); this.render();
+    UIService.closeModal('modal-project'); UIService.toast('Projet créé 🚀');
+    ['proj-name','proj-desc','proj-start','proj-end'].forEach(i => document.getElementById(i).value = '');
+  },
+  cycleStatus(id) {
+    const p = this._data.projects.find(p => p.id === id);
+    if (!p) return;
+    const statuses = ['planned','active','paused','completed'];
+    p.status = statuses[(statuses.indexOf(p.status) + 1) % statuses.length];
+    this.saveData(); this.render();
+  },
+  deleteProject(id) {
+    if (!confirm('Supprimer ce projet ?')) return;
+    this._data.projects = this._data.projects.filter(p => p.id !== id);
+    this.saveData(); this.render();
+  },
+  openMilestoneModal(projectId) {
+    document.getElementById('ms-project-id').value = projectId;
+    document.getElementById('ms-deadline').value = Utils.todayISO();
+    UIService.openModal('modal-milestone');
+  },
+  addMilestone() {
+    const projId = document.getElementById('ms-project-id').value;
+    const title = document.getElementById('ms-title').value.trim();
+    const deadline = document.getElementById('ms-deadline').value;
+    const createEvent = document.getElementById('ms-create-event').checked;
+    if (!title) return UIService.toast('Titre requis', false);
+    const p = this._data.projects.find(p => p.id === projId);
+    if (!p) return;
+    const ms = { id: Utils.uid(), title, deadline, completed: false };
+    p.milestones.push(ms);
+    this.saveData(); this.render();
+    // Interconnexion: créer rappel dans agenda
+    if (createEvent && deadline) CalendarModule.addEventFromMilestone(title, deadline);
+    UIService.closeModal('modal-milestone'); UIService.toast('Étape ajoutée');
+    document.getElementById('ms-title').value = '';
+    document.getElementById('ms-create-event').checked = false;
+  },
+  toggleMilestone(projId, msId) {
+    const p = this._data.projects.find(p => p.id === projId);
+    if (!p) return;
+    const ms = p.milestones.find(m => m.id === msId);
+    if (ms) { ms.completed = !ms.completed; this.saveData(); this.render(); }
+  },
+  bindEvents() {}
+};
+
+// ============================================================
+//  APP CORE
+// ============================================================
+const App = {
+  _currentView: 'health',
+  init() {
+    StorageService.initDefaults();
+    this._setHeaderDate();
+    this._bindNav();
+    this._bindFAB();
+    this._bindSubTabs();
+    HealthModule.init();
+    FinanceModule.init();
+    CalendarModule.init();
+    TodoModule.init();
+    ProjectModule.init();
+    // Set default dates in forms
+    document.querySelectorAll('input[type=date]').forEach(i => { if (!i.value) i.value = Utils.todayISO(); });
+  },
+  _setHeaderDate() {
+    const now = new Date();
+    document.getElementById('headerDate').textContent = now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  },
+  _bindNav() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const view = item.dataset.view;
+        if (!view) return;
+        this._switchView(view);
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === view));
+      });
+    });
+  },
+  _switchView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const el = document.getElementById('view-' + view);
+    if (el) el.classList.add('active');
+    this._currentView = view;
+    // Refresh on switch
+    if (view === 'health') HealthModule.render();
+    if (view === 'finance') FinanceModule.render();
+    if (view === 'calendar') CalendarModule.render();
+    if (view === 'todo') TodoModule.render();
+    if (view === 'projects') ProjectModule.render();
+  },
+  _bindFAB() {
+    document.getElementById('fabBtn').addEventListener('click', () => {
+      const modals = { health: 'modal-food', finance: 'modal-expense', calendar: 'modal-event', todo: 'modal-todo', projects: 'modal-project' };
+      const modal = modals[this._currentView];
+      if (modal) UIService.openModal(modal);
+    });
+  },
+  _bindSubTabs() {
+    document.querySelectorAll('.sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        UIService.setSubSection(tab.dataset.module, tab.dataset.section);
+        // Extra: refresh health sections
+        if (tab.dataset.module === 'health') {
+          if (tab.dataset.section === 'summary') HealthModule.renderSummary();
+          if (tab.dataset.section === 'imc') HealthModule.renderIMC();
+          if (tab.dataset.section === 'food') HealthModule.renderFood();
+          if (tab.dataset.section === 'sport') HealthModule.renderSport();
+        }
+      });
+    });
+    // Health sub-FABs
+    document.addEventListener('click', e => {
+      if (e.target.closest('[data-module="health"]')) {
+        const section = e.target.closest('[data-module="health"]')?.dataset.section;
+        if (section === 'food') {
+          document.getElementById('fabBtn').onclick = () => UIService.openModal('modal-food');
+        } else if (section === 'sport') {
+          document.getElementById('fabBtn').onclick = () => UIService.openModal('modal-sport');
+        } else if (section === 'imc') {
+          document.getElementById('fabBtn').onclick = () => UIService.openModal('modal-weight');
+        } else {
+          document.getElementById('fabBtn').onclick = () => UIService.openModal('modal-food');
+        }
+      }
+    });
+  }
+};
+
+// Boot
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
